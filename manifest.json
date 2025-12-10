@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Study Helper",
+  "version": "1.0",
+  "description": "Will help you study with various tools",
+  "permissions": ["scripting", "activeTab"],
+  "action": {
+    "default_title": "Read span text",
+    "default_popup": "popup.html"
+  }
+}
