@@ -4,8 +4,17 @@
   "version": "1.0",
   "description": "Will help you study with various tools",
   "permissions": ["scripting", "activeTab"],
+  "host_permissions": [
+    "https://study-helper-ugvc.onrender.com/*"
+  ],
   "action": {
     "default_title": "Read span text",
     "default_popup": "popup.html"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
 }

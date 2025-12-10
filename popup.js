@@ -2,36 +2,31 @@ const readBtn = document.getElementById('read');
 const listEl = document.getElementById('list');
 const responseEl = document.getElementById('response');
 
-const API_URL = 'https://study-helper-ugvc.onrender.com';
+const API_URL = 'https://study-helper-ugvc.onrender.com/api/gemini';
 
-button.addEventListener('click', () => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const tab = tabs[0];
-    chrome.scripting.executeScript(
-      {
-        target: { tabId: tab.id },
-        files: ['content.js']
+readBtn.addEventListener('click', () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+    chrome.tabs.sendMessage(
+      tabs[0].id,
+      { type: 'GET_SPANS' },
+      response => {
+        if (!response) return;
+        const { texts } = response;
+        listEl.innerHTML = '';
+        responseEl.textContent = '';
+        texts.forEach(text => {
+          const li = document.createElement('li');
+          li.textContent = text || '(empty)';
+          li.style.cursor = 'pointer';
+          li.addEventListener('click', () => sendToBackend(text));
+          listEl.appendChild(li);
+        });
       }
     );
   });
 });
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type === 'SPAN_TEXTS') {
-    listEl.textContent = '';
-    responseEl.textContent = '';
-
-    msg.texts.forEach((text, index) => {
-      const li = document.createElement('li');
-      li.textContent = text || '(empty)';
-      li.style.cursor = 'pointer';
-      li.addEventListener('click', () => sendToBackend(text));
-      listEl.appendChild(li);
-    });
-  }
-});
-
-async function sendToApi(text) {
+async function sendToBackend(text) {
   responseEl.textContent = 'Working...';
 
   try {
