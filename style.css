@@ -1,7 +1,26 @@
+* {
+    background-color: #d1d1d1;
+}
+
 body {
     font-family: sans-serif;
     min-width: 250px;
     padding: 10px;
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    margin-top: 5px;
+}
+
+ul li {
+    color: black;
+    padding: 5px;
+    background-color: white;
+    border-radius: 5px;
+    margin-top: 5px;
 }
 
 #result {
