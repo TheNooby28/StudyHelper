@@ -18,10 +18,11 @@ app.get('/', (req, res) => {
   res.json({ ok: true });
 });
 
-// POST /api/gemini  { text: "..." }
+// POST /api/gemini
 app.post('/api/gemini', async (req, res) => {
   try {
-    const { text } = req.body;
+    console.log(`Recieving API request from ${req.ip}`);
+    const { text } = "You are answering a simple question. Do not respond with any different formatting than regular plain text, no bold italics or anything. Do not respond with anything else other than the answer(s) to the question. This is the question:\n" + req.body;
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'Missing text' });
     }
@@ -34,20 +35,19 @@ app.post('/api/gemini', async (req, res) => {
           parts: [{ text }]
         }
       ]
-    }); // [web:59][web:65][web:68]
+    });
 
-    // In current @google/genai, this should exist:
     let out;
     if (typeof geminiRes.text === 'function') {
       out = geminiRes.text();
     } else {
-      // Fallback: manual extraction if .text() is missing
       const cand = geminiRes.candidates?.[0];
       const part = cand?.content?.parts?.[0];
       out = part?.text || '(no text from Gemini)';
     }
 
     res.json({ result: out });
+    console.log(`API response successfully sent to ${req.ip}`);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Gemini Error' });
