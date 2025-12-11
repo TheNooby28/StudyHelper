@@ -21,9 +21,8 @@ app.get('/', (req, res) => {
 // POST /api/gemini
 app.post('/api/gemini', async (req, res) => {
   try {
-    console.log(`Receiving API request from ${req.ip}`);
-    // Build the prompt text from the incoming request.
-    // Support either a JSON body like { text: '...' } or a raw string body.
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    console.log(`Receiving API request from ${ip}`);
     const prefix = "You are answering a simple question. Do not respond with any different formatting than regular plain text, no bold italics or anything. Do not respond with anything else other than the answer(s) to the question. This is the question:\n";
     const userInput = (req.body && typeof req.body === 'object' && 'text' in req.body)
       ? req.body.text
@@ -53,7 +52,7 @@ app.post('/api/gemini', async (req, res) => {
     }
 
     res.json({ result: out });
-    console.log(`API response successfully sent to ${req.ip}`);
+    console.log(`API response successfully sent to ${ip}`);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Gemini Error' });
