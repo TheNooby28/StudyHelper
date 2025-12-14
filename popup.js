@@ -76,12 +76,12 @@ signupBtn.addEventListener('click', async () => {
       body: JSON.stringify({ username, password })
     });
 
-    const data = await res.json();
-
     if (!res.ok) {
-    setAuthMsg(data.error || 'Signup failed');
+      setAuthMsg('Signup failed: ' + res.status);
       return;
     }
+
+    const data = await res.json();
 
     chrome.storage.sync.set({ token: data.token }, () => {
       setAuthMsg('Successful!');
@@ -106,12 +106,12 @@ loginBtn.addEventListener('click', async () => {
       body: JSON.stringify({ username, password })
     });
 
-    const data = await res.json();
-
     if (!res.ok) {
-      setAuthMsg(data.error || 'Login failed');
+      setAuthMsg('Login failed: ' + res.status);
       return;
     }
+
+    const data = await res.json();
 
     chrome.storage.sync.set({ token: data.token }, () => {
       setAuthMsg('Logged in!')

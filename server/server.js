@@ -42,7 +42,7 @@ app.get('/', (req, res) => {
 });
 
 //GET API Usage
-app.get('/api/usage', async (req, res) => {
+app.get('/api/usage', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const today = new Date().toISOString().slice(0, 10);
 
