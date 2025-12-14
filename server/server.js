@@ -5,7 +5,19 @@ import { GoogleGenAI } from '@google/genai';
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import db from './db.js';
+import pool from './db.js';
+
+(async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      tier INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+})();
 
 dotenv.config();
 
@@ -28,78 +40,71 @@ app.post('/api/signup', async (req, res) => {
   if (!username || !password)
     return res.status(400).json({ error: 'Missing fields' });
 
-  if (username.length < 3)
-    return res.status(400).json({ error: 'Username too short' });
-
   if (password.length < 6)
     return res.status(400).json({ error: 'Password too short' });
 
-  const password_hash = await bcrypt.hash(password, 10);
-
   try {
-    const result = db.prepare(`
-      INSERT INTO users (username, password_hash)
-      VALUES (?, ?)
-    `).run(username, password_hash);
-    
+    const hash = await bcrypt.hash(password, 10);
+
+    const result = await pool.query(
+      `INSERT INTO users (username, password_hash)
+       VALUES ($1, $2)
+       RETURNING id, username`,
+      [username, hash]
+    );
+
+    const user = result.rows[0];
+
     const token = jwt.sign(
-      { id: result.lastInsertRowid, username },
+      user,
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     res.json({ token });
-
   } catch (err) {
+    if (err.code === '23505')
+      return res.status(409).json({ error: 'Username taken' });
+
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
 app.post('/api/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
+  const { username, password } = req.body;
 
-    if (!username || !password)
-      return res.status(400).json({ error: 'Missing fields' });
+  const result = await pool.query(
+    'SELECT * FROM users WHERE username = $1',
+    [username]
+  );
 
-    const user = db.prepare(`
-      SELECT * FROM users WHERE username = ?
-    `).get(username);
+  const user = result.rows[0];
+  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-    
-    const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+  const match = await bcrypt.compare(password, user.password_hash);
+  if (!match) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const token = jwt.sign(
-      { id: user.id, username: user.username },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+  const token = jwt.sign(
+    { id: user.id, username: user.username },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
 
-    res.json({ token });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  res.json({ token });
 });
+
 
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
-  if (!header) return res.status(401).json({ error: 'Missing auth' });
+  if (!header) return res.status(401).json({ error: 'No token' });
 
-  const [type, token] = header.split (' ');
-  if (type !== 'Bearer' || !token)
-    return res.status(401).json({ error: 'Invalid token' });
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+  const token = header.split(' ')[1];
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.status(401).json({ error: 'Invalid token' });
-
-    req.user = decoded;
+    req.user = user;
     next();
   });
-
 }
 
 // POST /api/gemini

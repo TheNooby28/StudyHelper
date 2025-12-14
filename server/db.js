@@ -1,14 +1,11 @@
-import Database from 'better-sqlite3';
+import pkg from 'pg';
+const { Pool } = pkg;
 
-const db = new Database('./users.sqlite3');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: false }
+    : false
+});
 
-db.prepare(`
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        created_at TEXT DEFAULT (datetime('now'))
-    )
-`).run();
-
-export default db;
+export default pool;
