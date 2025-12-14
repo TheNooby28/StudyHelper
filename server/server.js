@@ -41,6 +41,40 @@ app.get('/', (req, res) => {
   res.json({ ok: true });
 });
 
+//GET API Usage
+app.get('/api/usage', async (req, res) => {
+  const userId = req.user.id;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const tierRes = await pool.query(
+    'SELECT tier FROM users WHERE id = $1',
+    [userId]
+  );
+
+  const tier = tierRes.rows[0]?.tier ?? 0;
+
+  const limits = {
+    0: 5,
+    1: 25,
+    2: 100,
+    3: null
+  };
+
+  const limit = limits[tier];
+
+  const usageRes = await pool.query(
+    'SELECT count FROM daily_usage where user_id = $1 AND date = $2',
+    [userId, today]
+  );
+
+  const used = usageRes.rows[0]?.count ?? 0;
+
+  res.json({
+    used,
+    limit
+  });
+});
+
 // POST /api/signup
 app.post('/api/signup', async (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;

@@ -7,15 +7,26 @@
     </head>
     <body>
 
-        <h3>Account</h3>
-        <input id="username" placeholder="Name" />
-        <input id="password" placeholder="password" type="password" />
-        <button id="signupBtn">Sign Up</button>
-        <button id="loginBtn">Log In</button>
-        <button id="logoutBtn">Log Out</button>
-        <div id="authmsg" style="margin-top: 5px; color: black;"></div>
+        <div id="accountBox">
+            <div id="accountHeader">
+                <span id="usageText">Usage - </span>
+                <button id="toggleAccount">▼</button>
+            </div>
 
-        <hr/>
+            <div id="accountDropdown" hidden>
+                <input id="username" placeholder="Username" />
+                <input id="password" type="password" placeholder="Password" />
+
+                <div class="authButtons">
+                <button id="signupBtn">Sign Up</button>
+                <button id="loginBtn">Log In</button>
+                <button id="logoutBtn">Log Out</button>
+                </div>
+
+                <div id="authmsg"></div>
+            </div>
+        </div>
+        <hr />
 
         <button id="read">Read Google Form Questions</button>
         <ul id="list"></ul>
