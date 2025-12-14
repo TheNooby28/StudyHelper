@@ -35,6 +35,9 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/signup', async (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  console.log(`Receiving signup request from ${ip}`);
+  
   const { username, password } = req.body;
 
   if (!username || !password)
@@ -72,6 +75,8 @@ app.post('/api/signup', async (req, res) => {
 });
 
 app.post('/api/login', async (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  console.log(`Receiving login request from ${ip}`);
   const { username, password } = req.body;
 
   const result = await pool.query(
