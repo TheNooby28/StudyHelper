@@ -1,5 +1,5 @@
 const API_URL = 'https://study-helper-ugvc.onrender.com/api/gemini';
-const SIGNUP_URL = 'https://study-helper-ugvc.onrender.com/api/singup'
+const SIGNUP_URL = 'https://study-helper-ugvc.onrender.com/api/signup'
 const LOGIN_URL = 'https://study-helper-ugvc.onrender.com/api/login';
 
 const readBtn = document.getElementById('read');
