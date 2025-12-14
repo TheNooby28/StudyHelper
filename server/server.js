@@ -7,6 +7,13 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from './db.js';
 
+const tier_limits = {
+  0: 5,
+  1: 25,
+  2: 100,
+  3: Infinity
+};
+
 (async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -29,11 +36,12 @@ app.use(express.json());
 
 const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Health check
+// GET Health check
 app.get('/', (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/signup
 app.post('/api/signup', async (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   console.log(`Receiving signup request from ${ip}`);
@@ -74,6 +82,7 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
+// POST /api/login
 app.post('/api/login', async (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   console.log(`Receiving login request from ${ip}`);
@@ -99,7 +108,7 @@ app.post('/api/login', async (req, res) => {
   res.json({ token });
 });
 
-
+//Middle check for authentication
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header) return res.status(401).json({ error: 'No token' });
@@ -112,8 +121,58 @@ function authMiddleware(req, res, next) {
   });
 }
 
+//Middle check for limiting
+async function usageMiddleWare(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const today = new Date().toISOString().slice(0,10);
+
+    const userRes = await pool.query(
+      'SELECT tier FROM users WHERE id = $1',
+      [userId]
+    );
+
+    const tier = userRes.rows[0]?.tier ?? 0;
+    const limit = tier_limits[tier];
+
+    if (limit === Infinity) {
+      return next();
+    }
+
+    const usageRes = await pool.query(
+      'SELECT count FROM daily_usage WHERE user_id = $1 AND date = $2',
+      [userId, today]
+    );
+
+    const used = usageRes.rows[0]?.count ?? 0;
+
+    if (used >= limit) {
+      return res.status(429).json({
+        error: 'Daily limit reached',
+        used,
+        limit
+      });
+    }
+
+   await pool.query(
+      `
+      INSERT INTO daily_usage (user_id, date, count)
+      VALUES ($1, $2, 1)
+      ON CONFLICT (user_id, date)
+      DO UPDATE SET count = daily_usage.count + 1
+      `,
+      [userId, today]
+    );
+
+    next();
+  } catch (err) {
+    console.error('Usage middleware error: ', err);
+    res.status(500).json({ error: 'Usage tracking failed' });
+  }
+}
+
 // POST /api/gemini
-app.post('/api/gemini', authMiddleware, async (req, res) => {
+app.post('/api/gemini', authMiddleware, usageMiddleWare, async (req, res) => {
   try {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     console.log(`Receiving API request from ${ip}`);

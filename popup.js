@@ -11,7 +11,7 @@ const passwordInput = document.getElementById('password');
 const signupBtn = document.getElementById('signupBtn');
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-const authMsg = document.getElementById('authMsg');
+const authMsg = document.getElementById('authmsg');
 
 function setAuthMsg(msg) {
   authMsg.textContent = msg;
@@ -34,7 +34,7 @@ signupBtn.addEventListener('click', async () => {
     const data = await res.json();
 
     if (!res.ok) {
-      setAuthMsg(data.error || 'Signup failed');
+    setAuthMsg(data.error || 'Signup failed');
       return;
     }
 
