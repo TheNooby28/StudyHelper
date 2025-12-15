@@ -7,6 +7,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from './db.js';
 
+import rateLimit from 'express-rate-limit';
+
 const tier_limits = {
   0: 5,
   1: 25,
@@ -204,9 +206,24 @@ async function usageMiddleWare(req, res, next) {
     res.status(500).json({ error: 'Usage tracking failed' });
   }
 }
-
+//Middle check for rate limiting
+const apiRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req, res) => {
+    if (req.user && req.user.id) {
+      return `user_${req.user.id}`;
+    }
+    return req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+  },
+  handler: (req, res) => {
+    return res.status(429).json({ error: 'Too many requests, please try again later.' });
+  }
+});
 // POST /api/gemini
-app.post('/api/gemini', authMiddleware, usageMiddleWare, async (req, res) => {
+app.post('/api/gemini', authMiddleware, apiRateLimiter, usageMiddleWare, async (req, res) => {
   try {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     console.log(`Receiving API request from ${ip}`);
