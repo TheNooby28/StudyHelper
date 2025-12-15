@@ -55,7 +55,7 @@ const usageRateLimiter = rateLimit({
 });
 
 //GET API Usage
-app.get('/api/usage', authMiddleware, async (req, res) => {
+app.get('/api/usage', usageRateLimiter, authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -100,7 +100,7 @@ const signupRateLimiter = rateLimit({
 });
 
 // POST /api/signup
-app.post('/api/signup', async (req, res) => {
+app.post('/api/signup', signupRateLimiter, async (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   console.log(`Receiving signup request from ${ip}`);
   
