@@ -6,7 +6,8 @@
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
-
+        <button id="stealthToggle" title="Toggle Stealth Mode">👁️</button>
+        
         <div id="accountBox">
             <div id="accountHeader">
                 <span id="usageText">Usage - </span>
@@ -16,11 +17,13 @@
             <div id="accountDropdown" hidden>
                 <input id="username" placeholder="Username" />
                 <input id="password" type="password" placeholder="Password" />
+                <button id="passwordDetailsBtn">?</button>
+                <p id="passwordDetails" style="margin-top: 0px; margin-bottom: 0px;" hidden>Your password is deadass encrypted so that not even I (Jason Adamoski) can view it.</p>
 
                 <div class="authButtons">
-                <button id="signupBtn">Sign Up</button>
-                <button id="loginBtn">Log In</button>
-                <button id="logoutBtn">Log Out</button>
+                    <button id="signupBtn">Sign Up</button>
+                    <button id="loginBtn">Log In</button>
+                    <button id="logoutBtn">Log Out</button>
                 </div>
 
                 <div id="authmsg"></div>

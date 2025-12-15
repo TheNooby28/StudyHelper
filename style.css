@@ -26,3 +26,22 @@ ul li {
 #result {
     white-space: pre-wrap;
 }
+
+#stealthToggle {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+#stealthToggle.active {
+  opacity: 1;
+}
+
+#stealthToggle:hover {
+  opacity: 1;
+}

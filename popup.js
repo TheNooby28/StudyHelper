@@ -17,9 +17,18 @@ const usageText = document.getElementById('usageText');
 const toggleAccount = document.getElementById('toggleAccount');
 const dropdown = document.getElementById('accountDropdown');
 
+const passwordDetailsBtn = document.getElementById('passwordDetailsBtn');
+const passwordDetails = document.getElementById('passwordDetails');
+
+const stealthToggle = document.getElementById('stealthToggle');
+
 function setAuthMsg(msg) {
   authMsg.textContent = msg;
 }
+
+passwordDetailsBtn.addEventListener('click', () => {
+  passwordDetails.hidden = !passwordDetails.hidden;
+});
 
 toggleAccount.addEventListener('click', async () => {
   dropdown.hidden = !dropdown.hidden;
@@ -34,6 +43,7 @@ async function loadUsage() {
     }
 
     try {
+      console.log('Fetching usage with token:', token);
       const res = await fetch(
         'https://study-helper-ugvc.onrender.com/api/usage',
         {
@@ -42,6 +52,7 @@ async function loadUsage() {
           }
         }
       );
+      console.log('Usage fetch status:', res.status);
 
       if (!res.ok) {
         usageText.textContent = 'Usage unavailable';
@@ -49,6 +60,8 @@ async function loadUsage() {
       }
 
       const data = await res.json();
+      console.log('Usage data:', data);
+      console.log('Usage data:', data);
 
       if (data.limit === null) {
         usageText.textContent = `Usage: ${data.used} / ∞`;
@@ -86,6 +99,7 @@ signupBtn.addEventListener('click', async () => {
     chrome.storage.sync.set({ token: data.token }, () => {
       setAuthMsg('Successful!');
     });
+    loadUsage();
   } catch (err) {
     console.error(err);
     setAuthMsg('Network error');
@@ -116,6 +130,7 @@ loginBtn.addEventListener('click', async () => {
     chrome.storage.sync.set({ token: data.token }, () => {
       setAuthMsg('Logged in!')
     });
+    loadUsage();
   } catch (err) {
     console.error(err);
     setAuthMsg('Network error');
@@ -126,6 +141,7 @@ logoutBtn.addEventListener('click', () => {
   chrome.storage.sync.remove('token', () => {
     setAuthMsg('Logged out');
   });
+  loadUsage();
 });
 
 readBtn.addEventListener('click', () => {
@@ -181,5 +197,31 @@ async function sendToBackend(text) {
     responseEl.textContent = 'Network Error';
   }
 }
+
+chrome.storage.sync.get('stealthMode', ({ stealthMode }) => {
+  if (stealthMode) {
+    stealthToggle.classList.add('active');
+    stealthToggle.textContent = '🥷';
+  } else {
+    stealthToggle.textContent = '👁️';
+  }
+});
+
+stealthToggle.addEventListener('click', () => {
+  chrome.storage.sync.get('stealthMode', ({ stealthMode }) => {
+    const newValue = !stealthMode;
+
+    chrome.storage.sync.set({ stealthMode: newValue });
+
+    if (newValue) {
+      stealthToggle.classList.add('active');
+      stealthToggle.textContent = '🥷';
+    } else {
+      stealthToggle.classList.remove('active');
+      stealthToggle.textContent = '👁️';
+    }
+  });
+});
+
 
 loadUsage();
