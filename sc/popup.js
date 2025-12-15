@@ -146,14 +146,31 @@ logoutBtn.addEventListener('click', () => {
 
 readBtn.addEventListener('click', () => {
   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+    if (!tabs[0]?.id) {
+      responseEl.textContent = 'No active tab';
+      return;
+    }
+
     chrome.tabs.sendMessage(
       tabs[0].id,
       { type: 'GET_SPANS' },
       response => {
-        if (!response) return;
+        if (chrome.runtime.lastError) {
+          responseEl.textContent =
+            'This page does not support reading questions.';
+          return;
+        }
+
+        if (!response || !response.texts) {
+          responseEl.textContent = 'No questions found on this page.';
+          return;
+        }
+
         const { texts } = response;
+
         listEl.innerHTML = '';
         responseEl.textContent = '';
+
         texts.forEach(text => {
           const li = document.createElement('li');
           li.textContent = text || '(empty)';
@@ -165,6 +182,7 @@ readBtn.addEventListener('click', () => {
     );
   });
 });
+
 
 async function sendToBackend(text) {
   responseEl.textContent = 'Working...';
