@@ -43,6 +43,17 @@ app.get('/', (req, res) => {
   res.json({ ok: true });
 });
 
+// Rate limiting for usage check
+const usageRateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many usage requests, please try again later.' },
+  keyGenerator: (req, res) =>
+    req.headers['x-forwarded-for'] || req.socket.remoteAddress || '',
+});
+
 //GET API Usage
 app.get('/api/usage', authMiddleware, async (req, res) => {
   const userId = req.user.id;
@@ -75,6 +86,17 @@ app.get('/api/usage', authMiddleware, async (req, res) => {
     used,
     limit
   });
+});
+
+// Rate limiting for signup
+const signupRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many signup requests, please try again later.' },
+  keyGenerator: (req, res) =>
+    req.headers['x-forwarded-for'] || req.socket.remoteAddress || '',
 });
 
 // POST /api/signup
@@ -118,8 +140,19 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
+// Rate limiting for login
+const loginRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts, please try again later.' },
+  keyGenerator: (req, res) =>
+    req.headers['x-forwarded-for'] || req.socket.remoteAddress || '',
+});
+
 // POST /api/login
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginRateLimiter, async (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   console.log(`Receiving login request from ${ip}`);
   const { username, password } = req.body;
@@ -206,7 +239,8 @@ async function usageMiddleWare(req, res, next) {
     res.status(500).json({ error: 'Usage tracking failed' });
   }
 }
-//Middle check for rate limiting
+
+// Rate limiting for API
 const apiRateLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 30,
@@ -222,6 +256,7 @@ const apiRateLimiter = rateLimit({
     return res.status(429).json({ error: 'Too many requests, please try again later.' });
   }
 });
+
 // POST /api/gemini
 app.post('/api/gemini', authMiddleware, apiRateLimiter, usageMiddleWare, async (req, res) => {
   try {
