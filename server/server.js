@@ -43,6 +43,17 @@ app.get('/', (req, res) => {
   res.json({ ok: true });
 });
 
+// API IP rate limiting
+const apiIpLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP.' },
+  keyGenerator: (req) =>
+    req.headers['x-forwarded-for'] || req.socket.remoteAddress || '',
+});
+
 // Rate limiting for usage check
 const usageRateLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
@@ -241,24 +252,19 @@ async function usageMiddleWare(req, res, next) {
 }
 
 // Rate limiting for API
-const apiRateLimiter = rateLimit({
+const apiUserRateLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req, res) => {
-    if (req.user && req.user.id) {
-      return `user_${req.user.id}`;
-    }
-    return req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
-  },
+  keyGenerator: (req) => `user_${req.user.id}`,
   handler: (req, res) => {
     return res.status(429).json({ error: 'Too many requests, please try again later.' });
   }
 });
 
 // POST /api/gemini
-app.post('/api/gemini', authMiddleware, apiRateLimiter, usageMiddleWare, async (req, res) => {
+app.post('/api/gemini', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddleWare, async (req, res) => {
   try {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     console.log(`Receiving API request from ${ip}`);
