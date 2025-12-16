@@ -38,9 +38,14 @@ document.addEventListener('click', async (e) => {
       font-size: 13px;
       border-radius: 6px;
       max-width: 600px;
-      white-space: pre-wrap;
-      font-family: monospace;
+      
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: normal;
+
+      line-height: 1.4;
     `;
+
     questionSpan.after(answerBox);
 
     chrome.storage.sync.get('token', async ({ token }) => {
@@ -68,7 +73,12 @@ document.addEventListener('click', async (e) => {
         }
 
         const data = await res.json();
-        answerBox.textContent = data.result || 'No response';
+
+        const cleaned = data.result
+          .replace(/\s*\n\s*/g, ' ') // remove weird newlines
+          .replace(/\s+/g, ' ')     // collapse extra spaces
+          .trim();
+        answerBox.textContent = cleaned;
       } catch (err) {
         answerBox.textContent = 'Network error';
       }
