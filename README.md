@@ -18,6 +18,13 @@ When you press the *Read Questions* button, it will give a list of questions det
 4. Click the question you want the answer of
 5. The answer of the question will appear underneath
 
+## Stealth Mode!
+1. Open the extension as normal (make sure you're signed in)
+2. Click the eyeball in the top right to enable stealth mode
+3. Alt + Click any text on the avaliable websites (see below) to get the answer right next to it
+4. When you want to quickly hide everything, you can press ESC to delete all the answers
+5. To disable, press the now ninja button in the extension page
+
 ## Installation
 1. Download the newest extension file from the [releases page](https://github.com/TheNooby28/StudyHelper/releases)
 2. The extension should have been imported into Google Chrome
@@ -46,7 +53,7 @@ When you press the *Read Questions* button, it will give a list of questions det
 
 ## Roadmap (future plans)
 - Adding answer history
-- Adding *stealth mode*
+- Polishing *stealth mode*
 
 ## License
 MIT License
