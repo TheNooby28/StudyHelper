@@ -10,10 +10,11 @@ import pool from './db.js';
 import rateLimit from 'express-rate-limit';
 
 const tier_limits = {
-  0: 5,
-  1: 25,
-  2: 100,
-  3: Infinity
+  0: 0,
+  1: 5,
+  2: 25,
+  3: 100,
+  4: Infinity
 };
 
 (async () => {
