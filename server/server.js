@@ -79,10 +79,11 @@ app.get('/api/usage', usageRateLimiter, authMiddleware, async (req, res) => {
   const tier = tierRes.rows[0]?.tier ?? 0;
 
   const limits = {
-    0: 5,
-    1: 25,
-    2: 100,
-    3: null
+    0: 0,
+    1: 5,
+    2: 25,
+    3: 100,
+    4: null
   };
 
   const limit = limits[tier];
