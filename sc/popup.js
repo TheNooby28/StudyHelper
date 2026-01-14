@@ -1,4 +1,4 @@
-const API_URL = 'https://study-helper-ugvc.onrender.com/api/gemini';
+const API_URL = 'https://study-helper-ugvc.onrender.com/api/ai';
 const SIGNUP_URL = 'https://study-helper-ugvc.onrender.com/api/signup'
 const LOGIN_URL = 'https://study-helper-ugvc.onrender.com/api/login';
 

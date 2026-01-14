@@ -2,10 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { OpenRouter } from '@openrouter/sdk';
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import pool from './db.js';
+import sql from './db.js';
 
 import rateLimit from 'express-rate-limit';
 
@@ -18,7 +19,7 @@ const tier_limits = {
 };
 
 (async () => {
-  await pool.query(`
+  await sql`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
@@ -26,13 +27,17 @@ const tier_limits = {
       tier INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-  `);
+  `;
 })();
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 10000;
+
+const openRouter = new OpenRouter({
+  apiKey: process.env.OpenRouter_API_KEY,
+});
 
 app.use(cors());
 app.use(express.json());
@@ -71,10 +76,7 @@ app.get('/api/usage', usageRateLimiter, authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const today = new Date().toISOString().slice(0, 10);
 
-  const tierRes = await pool.query(
-    'SELECT tier FROM users WHERE id = $1',
-    [userId]
-  );
+  const tierRes = await sql`SELECT tier FROM users WHERE id = ${userId}`;
 
   const tier = tierRes.rows[0]?.tier ?? 0;
 
@@ -88,10 +90,7 @@ app.get('/api/usage', usageRateLimiter, authMiddleware, async (req, res) => {
 
   const limit = limits[tier];
 
-  const usageRes = await pool.query(
-    'SELECT count FROM daily_usage where user_id = $1 AND date = $2',
-    [userId, today]
-  );
+  const usageRes = await sql`SELECT count FROM daily_usage where user_id = ${userId} AND date = ${today}`;
 
   const used = usageRes.rows[0]?.count ?? 0;
 
@@ -128,12 +127,9 @@ app.post('/api/signup', signupRateLimiter, async (req, res) => {
   try {
     const hash = await bcrypt.hash(password, 10);
 
-    const result = await pool.query(
-      `INSERT INTO users (username, password_hash)
-       VALUES ($1, $2)
-       RETURNING id, username`,
-      [username, hash]
-    );
+    const result = await sql`INSERT INTO users (username, password_hash)
+       VALUES (${username}, ${hash})
+       RETURNING id, username`;
 
     const user = result.rows[0];
 
@@ -170,10 +166,7 @@ app.post('/api/login', loginRateLimiter, async (req, res) => {
   console.log(`Receiving login request from ${ip}`);
   const { username, password } = req.body;
 
-  const result = await pool.query(
-    'SELECT * FROM users WHERE username = $1',
-    [username]
-  );
+  const result = await sql`SELECT * FROM users WHERE username = ${username}`;
 
   const user = result.rows[0];
   if (!user) return res.status(401).json({ error: 'Invalid credentials' });
@@ -209,10 +202,7 @@ async function usageMiddleWare(req, res, next) {
     const userId = req.user.id;
     const today = new Date().toISOString().slice(0,10);
 
-    const userRes = await pool.query(
-      'SELECT tier FROM users WHERE id = $1',
-      [userId]
-    );
+    const userRes = await sql`SELECT tier FROM users WHERE id = ${userId}`;
 
     const tier = userRes.rows[0]?.tier ?? 0;
     const limit = tier_limits[tier];
@@ -221,10 +211,7 @@ async function usageMiddleWare(req, res, next) {
       return next();
     }
 
-    const usageRes = await pool.query(
-      'SELECT count FROM daily_usage WHERE user_id = $1 AND date = $2',
-      [userId, today]
-    );
+    const usageRes = await sql`SELECT count FROM daily_usage WHERE user_id = ${userId} AND date = ${today}`;
 
     const used = usageRes.rows[0]?.count ?? 0;
 
@@ -236,15 +223,12 @@ async function usageMiddleWare(req, res, next) {
       });
     }
 
-   await pool.query(
-      `
+   await sql`
       INSERT INTO daily_usage (user_id, date, count)
-      VALUES ($1, $2, 1)
+      VALUES (${userId}, ${today}, 1)
       ON CONFLICT (user_id, date)
       DO UPDATE SET count = daily_usage.count + 1
-      `,
-      [userId, today]
-    );
+      `;
 
     next();
   } catch (err) {
@@ -266,7 +250,7 @@ const apiUserRateLimiter = rateLimit({
 });
 
 // POST /api/gemini
-app.post('/api/gemini', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddleWare, async (req, res) => {
+app.post('/api/ai', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddleWare, async (req, res) => {
   try {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     console.log(`Receiving API request from ${ip}`);
@@ -279,7 +263,12 @@ app.post('/api/gemini', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageM
       return res.status(400).json({ error: 'Missing text' });
     }
 
-    const geminiRes = await client.models.generateContent({
+    const openRouterRes = await openRouter.callModel({
+      model: 'deepseek/deepseek-r1-0528:free',
+      input: text,
+    });
+    
+    client.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: [
         {
@@ -290,10 +279,10 @@ app.post('/api/gemini', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageM
     });
 
     let out;
-    if (typeof geminiRes.text === 'function') {
-      out = geminiRes.text();
+    if (typeof openRouterRes.text === 'function') {
+      out = openRouterRes.text();
     } else {
-      const cand = geminiRes.candidates?.[0];
+      const cand = openRouterRes.candidates?.[0];
       const part = cand?.content?.parts?.[0];
       out = part?.text || '(no text from Gemini)';
     }
