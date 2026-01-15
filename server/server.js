@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+dotenv.config();
 import { GoogleGenAI } from '@google/genai';
 import { OpenRouter } from '@openrouter/sdk';
 
@@ -29,8 +30,6 @@ const tier_limits = {
     );
   `;
 })();
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 10000;
