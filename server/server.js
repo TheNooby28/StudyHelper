@@ -30,6 +30,15 @@ const tier_limits = {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS daily_usage (
+        user_id INTEGER REFERENCES users(id),
+        date DATE NOT NULL,
+        count INTEGER DEFAULT 0,
+        PRIMARY KEY (user_id, date)
+      );
+    `
     console.log("✅ DB ready");
   } catch (e) {
     console.error("❌ DB init failed:", e);
@@ -82,7 +91,7 @@ app.get('/api/usage', usageRateLimiter, authMiddleware, async (req, res) => {
 
   const tierRes = await sql`SELECT tier FROM users WHERE id = ${userId}`;
 
-  const tier = tierRes.rows[0]?.tier ?? 0;
+  const tier = tierRes[0]?.tier ?? 0;
 
   const limits = {
     0: 0,
@@ -96,7 +105,7 @@ app.get('/api/usage', usageRateLimiter, authMiddleware, async (req, res) => {
 
   const usageRes = await sql`SELECT count FROM daily_usage where user_id = ${userId} AND date = ${today}`;
 
-  const used = usageRes.rows[0]?.count ?? 0;
+  const used = usageRes[0]?.count ?? 0;
 
   res.json({
     used,
@@ -135,7 +144,7 @@ app.post('/api/signup', signupRateLimiter, async (req, res) => {
        VALUES (${username}, ${hash})
        RETURNING id, username`;
 
-    const user = result.rows[0];
+    const user = result[0];
 
     const token = jwt.sign(
       user,
@@ -172,7 +181,7 @@ app.post('/api/login', loginRateLimiter, async (req, res) => {
 
   const result = await sql`SELECT * FROM users WHERE username = ${username}`;
 
-  const user = result.rows[0];
+  const user = result[0];
   if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
   const match = await bcrypt.compare(password, user.password_hash);
@@ -208,7 +217,7 @@ async function usageMiddleWare(req, res, next) {
 
     const userRes = await sql`SELECT tier FROM users WHERE id = ${userId}`;
 
-    const tier = userRes.rows[0]?.tier ?? 0;
+    const tier = userRes[0]?.tier ?? 0;
     const limit = tier_limits[tier];
 
     if (limit === Infinity) {
@@ -217,7 +226,7 @@ async function usageMiddleWare(req, res, next) {
 
     const usageRes = await sql`SELECT count FROM daily_usage WHERE user_id = ${userId} AND date = ${today}`;
 
-    const used = usageRes.rows[0]?.count ?? 0;
+    const used = usageRes[0]?.count ?? 0;
 
     if (used >= limit) {
       return res.status(429).json({
