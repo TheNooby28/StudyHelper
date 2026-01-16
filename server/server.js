@@ -276,7 +276,7 @@ app.post('/api/ai', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddl
     
 
     const result = openRouter.callModel({
-      model: 'xiaomi/mimo-v2-flash:free',
+      model: 'google/gemini-2.0-flash-exp:free',
       input: text,
     });
 
