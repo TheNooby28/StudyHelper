@@ -273,20 +273,10 @@ app.post('/api/ai', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddl
       return res.status(400).json({ error: 'Missing text' });
     }
 
-    /*const completion = await openRouter.chat.completion.create({
-      model: 'deepseek/deepseek-r1-0528:free',
-      messages: [
-        {
-          role: 'user',
-          content: text,
-        },
-      ],
-    });
-
-    const out = completion.choices?.[0]?.message?.content ?? '(No text from AI)';*/
+    
 
     const result = openRouter.callModel({
-      model: 'deepseek/deepseek-r1-0528:free',
+      model: 'xiaomi/mimo-v2-flash:free',
       input: text,
     });
 

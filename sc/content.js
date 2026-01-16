@@ -56,7 +56,7 @@ document.addEventListener('click', async (e) => {
 
       try {
         const res = await fetch(
-          'https://study-helper-ugvc.onrender.com/api/gemini',
+          'https://study-helper-ugvc.onrender.com/api/ai',
           {
             method: 'POST',
             headers: {
