@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config();
-import { GoogleGenAI } from '@google/genai';
 import { OpenRouter } from '@openrouter/sdk';
 
 import bcrypt from 'bcrypt';
@@ -54,8 +53,6 @@ const openRouter = new OpenRouter({
 
 app.use(cors());
 app.use(express.json());
-
-const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // GET Health check
 app.get('/', (req, res) => {
@@ -267,7 +264,7 @@ app.post('/api/ai', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddl
   try {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     console.log(`Receiving API request from ${ip}`);
-    const prefix = "You are answering a simple question. Do not respond with any different formatting than regular plain text, no bold italics or anything. Do not respond with anything else other than the answer(s) to the question. This is the question:\n";
+    const prefix = "You are answering a simple question. Do not respond with any different formatting than regular plain text, no bold italics or anything. Do not respond with anything else other than the answer(s) to the question.\n\nThis is the question:\n";
     const userInput = (req.body && typeof req.body === 'object' && 'text' in req.body)
       ? req.body.text
       : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
@@ -276,29 +273,24 @@ app.post('/api/ai', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddl
       return res.status(400).json({ error: 'Missing text' });
     }
 
-    const openRouterRes = await openRouter.callModel({
+    /*const completion = await openRouter.chat.completion.create({
       model: 'deepseek/deepseek-r1-0528:free',
-      input: text,
-    });
-    
-    client.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
+      messages: [
         {
           role: 'user',
-          parts: [{ text }]
-        }
-      ]
+          content: text,
+        },
+      ],
     });
 
-    let out;
-    if (typeof openRouterRes.text === 'function') {
-      out = openRouterRes.text();
-    } else {
-      const cand = openRouterRes.candidates?.[0];
-      const part = cand?.content?.parts?.[0];
-      out = part?.text || '(no text from Gemini)';
-    }
+    const out = completion.choices?.[0]?.message?.content ?? '(No text from AI)';*/
+
+    const result = openRouter.callModel({
+      model: 'openai/gpt-5-nano',
+      input: text,
+    });
+
+    const out = await result.getText();
 
     res.json({ result: out });
     console.log(`API response successfully sent to ${ip}`);

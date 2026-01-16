@@ -207,7 +207,7 @@ async function sendToBackend(text) {
       }
 
       const data = await res.json();
-      responseEl.textContent = data.result || '(No result from Gemini)';
+      responseEl.textContent = data.result || '(No result from AI)';
       loadUsage();
     });
   } catch (err) {
