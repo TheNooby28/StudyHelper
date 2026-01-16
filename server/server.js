@@ -286,7 +286,7 @@ app.post('/api/ai', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddl
     const out = completion.choices?.[0]?.message?.content ?? '(No text from AI)';*/
 
     const result = openRouter.callModel({
-      model: 'openai/gpt-5-nano',
+      model: 'deepseek/deepseek-r1-0528:free',
       input: text,
     });
 
