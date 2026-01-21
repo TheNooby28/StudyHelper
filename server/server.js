@@ -264,7 +264,7 @@ app.post('/api/ai', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddl
   try {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     console.log(`Receiving API request from ${ip}`);
-    const prefix = "You are answering a simple question. Do not respond with any different formatting than regular plain text, no bold italics or anything. Do not respond with anything else other than the answer(s) to the question.\n\nThis is the question:\n";
+    const prefix = "You are answering a simple question. Do not respond with any different formatting than regular plain text, no bold italics or anything. Do not respond with anything else other than the answer(s) to the question. If the question just contains NOTHING but a quotation, then you will say the literary device that is used in the quotation.\n\nThis is the question:\n";
     const userInput = (req.body && typeof req.body === 'object' && 'text' in req.body)
       ? req.body.text
       : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
@@ -276,7 +276,7 @@ app.post('/api/ai', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddl
     
 
     const result = openRouter.callModel({
-      model: 'google/gemini-2.0-flash-exp:free',
+      model: 'xiaomi/mimo-v2-flash:free',
       input: text,
     });
 
