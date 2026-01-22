@@ -290,6 +290,35 @@ app.post('/api/ai', apiIpLimiter, authMiddleware, apiUserRateLimiter, usageMiddl
   }
 });
 
+app.post('/api/datamuse', async (req, res) => {
+  try {
+    const { query } = req.body;
+
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ error: "Invalid query" });
+    }
+
+    const encodedQuery = encodeURIComponent(query.trim());
+
+    const response = await fetch(
+      `https://api.datamuse.com/words?ml=${encodedQuery}`
+    );
+
+    const data = await response.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return res.json({ word: null });
+    }
+
+    const firstWord = data[0].word;
+
+    res.json({ word: firstWord });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Datamuse failed 😭" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
