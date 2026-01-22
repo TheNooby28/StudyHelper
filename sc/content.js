@@ -23,8 +23,10 @@ document.addEventListener('click', async (e) => {
     if (questionSpan.nextElementSibling?.classList.contains('study-helper-answer')) {
       return;
     }
+    let small = false;
     const fullQuestion = questionSpan.textContent.trim();
-    if (!fullQuestion || fullQuestion.length < 5) return;
+    if (!fullQuestion) return;
+    if (/^[a-zA-Z]+$/.test(fullQuestion)) small = true;
 
     const answerBox = document.createElement('div');
     answerBox.className = 'study-helper-answer';
@@ -47,42 +49,56 @@ document.addEventListener('click', async (e) => {
     `;
 
     questionSpan.after(answerBox);
-
-    chrome.storage.sync.get('token', async ({ token }) => {
-      if (!token) {
-        answerBox.textContent = 'Not logged in';
-        return;
-      }
-
-      try {
-        const res = await fetch(
-          'https://study-helper-ugvc.onrender.com/api/ai',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({ text: fullQuestion })
-          }
-        );
-
-        if (!res.ok) {
-          answerBox.textContent = `Error: (${res.status})`;
+    if (!small) {
+      chrome.storage.sync.get('token', async ({ token }) => {
+        if (!token) {
+          answerBox.textContent = 'Not logged in';
           return;
         }
 
-        const data = await res.json();
+        try {
+          const res = await fetch(
+            'https://study-helper-ugvc.onrender.com/api/ai',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({ text: fullQuestion })
+            }
+          );
 
-        const cleaned = data.result
-          .replace(/\s*\n\s*/g, ' ') // remove weird newlines
-          .replace(/\s+/g, ' ')     // collapse extra spaces
-          .trim();
-        answerBox.textContent = cleaned;
-      } catch (err) {
+          if (!res.ok) {
+            answerBox.textContent = `Error: (${res.status})`;
+            return;
+          }
+
+          const data = await res.json();
+
+          const cleaned = data.result
+            .replace(/\s*\n\s*/g, ' ') // remove weird newlines
+            .replace(/\s+/g, ' ')     // collapse extra spaces
+            .trim();
+          answerBox.textContent = cleaned;
+        } catch (err) {
+          answerBox.textContent = 'Network error';
+        }
+      });
+    } else {
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${fullQuestion}`);
+        const data = await res.json();
+        if (!Array.isArray(data)) {
+          answerBox.textContent = 'No definition found';
+          return;
+        }
+        const firstDef = data[0].meanings[0].definitions[0].definition;
+        answerBox.textContent = firstDef;
+      } catch(err) {
         answerBox.textContent = 'Network error';
       }
-    });
+    }
   });
 });
 // Gets the esc key being pressed
