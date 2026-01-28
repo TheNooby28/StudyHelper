@@ -115,10 +115,8 @@ document.addEventListener('click', async (e) => {
       if (questionSpan.nextElementSibling?.classList.contains('study-helper-answer')) {
         return;
       }
-      let small = false;
       const fullQuestion = questionSpan.textContent.trim();
       if (!fullQuestion) return;
-      if (/^[a-zA-Z]+$/.test(fullQuestion)) small = true;
 
       const answerBox = document.createElement('div');
       answerBox.className = 'study-helper-answer';
@@ -142,10 +140,10 @@ document.addEventListener('click', async (e) => {
 
       questionSpan.after(answerBox);
       try {
-        const res = await fetch("/api/datamuse", {
+        const res = await fetch("https://study-helper-ugvc.onrender.com/api/datamuse", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: definition })
+          body: JSON.stringify({ query: fullQuestion })
         });
         const data = await res.json();
         if (!data.word) {

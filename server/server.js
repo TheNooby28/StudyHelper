@@ -315,7 +315,7 @@ app.post('/api/datamuse', async (req, res) => {
     res.json({ word: firstWord });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Datamuse failed 😭" });
+    res.status(500).json({ error: "Datamuse failed" });
   }
 });
 
